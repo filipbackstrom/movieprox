@@ -1,0 +1,6 @@
+node_modules/
+.cache/
+*.log
+.DS_Store
+# Raw IMDb downloads (large). The generated data/movies.json IS committed.
+data/raw/

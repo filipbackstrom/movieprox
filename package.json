@@ -1,0 +1,17 @@
+{
+  "name": "ratingle",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A daily movie guessing game: narrow down the secret movie by IMDb rating, Betweenle-style.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "build:data": "NODE_USE_ENV_PROXY=1 node scripts/build-data.mjs",
+    "enrich:tmdb": "NODE_USE_ENV_PROXY=1 node scripts/enrich-tmdb.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "license": "MIT"
+}
