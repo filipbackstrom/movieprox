@@ -4,7 +4,7 @@ Daily guessing games in the spirit of [Betweenle](https://betweenle.com/), built
 
 - **Movieprox** (`/`): guess the secret movie by its **IMDb rating**.
 - **Musicprox** (`/music/`): guess the secret artist by their **total Spotify streams**.
-- **Geoprox** (`/countries/`): guess the secret country by its **name's place in the alphabet**, Betweenle's own mechanic.
+- **Geoprox** (`/geo/`): guess the secret country by its **name's place in the alphabet**, Betweenle's own mechanic.
 
 You are shown two items: one above the secret, one below. Every guess reveals its value. If it is closer to the secret than one of the bounds, it replaces that bound and the range shrinks. Guess something with the exact same value and the value is pinned; from there it is about figuring out *which* one it is. You have 15 guesses, and hints unlock along the way:
 
@@ -106,7 +106,7 @@ Everything game-specific lives in one config file. Copy `src/games/music.js`, po
 ```
 index.html                     Movieprox page
 music/index.html               Musicprox page
-countries/index.html           Geoprox page
+geo/index.html                 Geoprox page
 src/engine.js                  shared game engine (rules, hints, daily seed, search, stats)
 src/app.js                     browser UI, takes a game config
 src/games/movies.js            Movieprox config
