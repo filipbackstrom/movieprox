@@ -58,12 +58,15 @@ export default {
     },
   },
 
-  /** Starting bounds should have at least twice (or half) the streams, and preferably be household names. */
+  /**
+   * Starting bounds should have at least twice (or half) the streams, and preferably be
+   * household names: the artists with articles in the most Wikipedia editions.
+   */
   farEnough: (candidate, target) => candidate.streams >= 2 * target.streams || candidate.streams <= target.streams / 2,
   boundCandidates: (pool) =>
     pool
       .slice()
-      .sort((a, b) => b.streams - a.streams)
+      .sort((a, b) => (b.sitelinks || 0) - (a.sitelinks || 0) || b.streams - a.streams)
       .slice(0, 300),
 
   name: (a) => a.name,

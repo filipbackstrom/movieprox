@@ -307,6 +307,24 @@ test('music guesses compare stream counts', () => {
   assert.equal(r3.outcome, OUTCOME.CORRECT);
 });
 
+test('music bounds prefer the most widely covered artists', () => {
+  // 300 moderately covered artists that are NOT far enough from BTS (45B) to be bounds,
+  // two widely covered ones that are, and the fixtures above with almost no coverage.
+  const fillers = Array.from({ length: 300 }, (_, i) => artist(`fill${i}`, `Filler ${i}`, 23 + (i % 60), { sitelinks: 5 }));
+  const pool = [
+    ...artists.map((a) => ({ ...a, sitelinks: 1 })),
+    ...fillers,
+    artist('fam-hi', 'Famous High', 100, { sitelinks: 150 }),
+    artist('fam-lo', 'Famous Low', 2, { sitelinks: 120 }),
+  ];
+  const rng = E.mulberry32(11);
+  for (let i = 0; i < 20; i++) {
+    const b = E.pickBounds(music, pool, bts, rng); // 45B
+    assert.equal(b.high.id, 'fam-hi');
+    assert.equal(b.low.id, 'fam-lo');
+  }
+});
+
 test('music bounds are at least a factor two away when possible', () => {
   const rng = E.mulberry32(7);
   for (let i = 0; i < 30; i++) {

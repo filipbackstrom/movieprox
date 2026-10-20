@@ -64,10 +64,12 @@ Spotify does not publish stream totals, so the numbers come from [kworb.net](htt
 npm run build:music
 ```
 
-Defaults: all 3,000 artists are guessable; the top 1,000 with complete hints can be the daily answer. Downloaded pages are cached in `data/raw/kworb/` (ignored by git) and reused for three days, and song pages are fetched two at a time to be polite. Flags:
+Defaults: all 3,000 artists are guessable; the daily answer comes from the top 1,000, restricted to artists with complete hints and an article in at least 20 Wikipedia language editions. That last number (Wikidata's "sitelinks" count) is the fame signal: global streaming is dominated by Latin and Indian artists that many players have never heard of, and Wikipedia coverage is a decent proxy for who is known worldwide. Starting bounds are drawn from the most widely covered artists for the same reason.
+
+Downloaded pages and Wikidata results are cached in `data/raw/kworb/` (ignored by git) and reused for three days, so re-tuning the thresholds is instant. Song pages are fetched two at a time to be polite. Flags:
 
 ```sh
-node scripts/build-music-data.mjs --answer-count 800 --songs 5
+node scripts/build-music-data.mjs --answer-count 800 --min-sitelinks 30
 node scripts/build-music-data.mjs --skip-songs          # quick run without the per-artist pages
 node scripts/build-music-data.mjs --max-age-hours 0     # force fresh downloads
 ```
@@ -114,5 +116,5 @@ data/artists.json              generated artist data
 - **Wasted guesses.** A guess outside the current range still reveals its value but moves nothing, as in Betweenle.
 - **Candidate count.** The number under the bounds is how many answer-pool items sit inside the current range. It is the equivalent of Betweenle's distance meter, and matters more in Musicprox where the raw numbers mean little to most players.
 - **Scale.** Movie ratings are shown on a linear 0–10 track. Streams span two orders of magnitude, so the Musicprox track is logarithmic.
-- **Starting bounds.** Movies: at least a full rating point away from the secret. Artists: at least twice, or at most half, the secret's streams.
+- **Starting bounds.** Movies: at least a full rating point away from the secret, preferring films with many votes. Artists: at least twice, or at most half, the secret's streams, preferring artists with the widest Wikipedia coverage.
 - **Daily selection.** The answer pool is shuffled once with a fixed seed and the day number indexes into it, so the daily answer is the same for everyone and does not repeat until the pool is exhausted.

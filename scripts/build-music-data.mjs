@@ -14,6 +14,7 @@
  *
  * Options:
  *   --answer-count N     How many of the top artists may be daily answers (default 1000)
+ *   --min-sitelinks N    Daily answers need an article in at least N Wikipedia editions (default 20)
  *   --songs N            Songs to keep per artist (default 5)
  *   --cache-dir DIR      Where downloaded pages are kept (default data/raw/kworb)
  *   --max-age-hours N    Reuse cached pages younger than this (default 72)
@@ -31,6 +32,7 @@ const WDQS = 'https://query.wikidata.org/sparql';
 
 const args = parseArgs(process.argv.slice(2));
 const ANSWER_COUNT = int(args['answer-count'], 1000);
+const MIN_SITELINKS = int(args['min-sitelinks'], 20);
 const SONGS_PER_ARTIST = int(args.songs, 5);
 const CACHE_DIR = args['cache-dir'] || path.join('data', 'raw', 'kworb');
 const MAX_AGE_MS = int(args['max-age-hours'], 72) * 3_600_000;
@@ -145,6 +147,7 @@ function wikidataQuery(ids) {
   return `
 SELECT ?spotify ?item
   (SAMPLE(?itemLabel_) AS ?itemLabel)
+  (SAMPLE(?sitelinks_) AS ?sitelinks)
   (GROUP_CONCAT(DISTINCT ?typeLabel; separator="|") AS ?types)
   (GROUP_CONCAT(DISTINCT ?genderLabel; separator="|") AS ?genders)
   (GROUP_CONCAT(DISTINCT ?countryLabel; separator="|") AS ?countries)
@@ -155,6 +158,7 @@ WHERE {
   VALUES ?spotify { ${values} }
   ?item wdt:P1902 ?spotify .
   OPTIONAL { ?item rdfs:label ?itemLabel_ FILTER(LANG(?itemLabel_) = "en") }
+  OPTIONAL { ?item wikibase:sitelinks ?sitelinks_ }
   OPTIONAL { ?item wdt:P31 ?type . ?type rdfs:label ?typeLabel FILTER(LANG(?typeLabel) = "en") }
   OPTIONAL { ?item wdt:P21 ?gender . ?gender rdfs:label ?genderLabel FILTER(LANG(?genderLabel) = "en") }
   OPTIONAL { ?item wdt:P27 ?country . ?country rdfs:label ?countryLabel FILTER(LANG(?countryLabel) = "en") }
@@ -212,6 +216,8 @@ function interpret(binding) {
   const genres = [...new Set(split('genres'))].slice(0, 4);
   return {
     wikidata: binding.item.value.split('/').pop(),
+    // Number of Wikipedia language editions with an article: a rough "how famous globally" signal.
+    sitelinks: binding.sitelinks ? Number(binding.sitelinks.value) : 0,
     type,
     gender,
     countries,
@@ -264,34 +270,52 @@ function pickSongs(songs) {
 // ---------- main ----------
 
 async function main() {
-  log('config', { ANSWER_COUNT, SONGS_PER_ARTIST, CACHE_DIR, SKIP_SONGS, OUT });
+  log('config', { ANSWER_COUNT, MIN_SITELINKS, SONGS_PER_ARTIST, CACHE_DIR, SKIP_SONGS, OUT });
 
   log('fetching artist list');
   const artists = parseArtists(await fetchCached(KWORB_ARTISTS, 'artists.html'));
   if (artists.length < 1000) throw new Error(`Only parsed ${artists.length} artists; did the page layout change?`);
   log(`${artists.length} artists parsed`);
 
-  log('querying Wikidata');
+  // Wikidata results are cached per Spotify ID so the thresholds below can be re-tuned
+  // without re-querying. `null` marks an ID that Wikidata does not know.
+  mkdirSync(CACHE_DIR, { recursive: true });
+  const wdCacheFile = path.join(CACHE_DIR, 'wikidata.json');
+  const wdCache =
+    existsSync(wdCacheFile) && Date.now() - statSync(wdCacheFile).mtimeMs < MAX_AGE_MS ? JSON.parse(readFileSync(wdCacheFile, 'utf8')) : {};
   const byId = new Map(artists.map((a) => [a.id, a]));
+  const todo = artists.filter((a) => !(a.id in wdCache));
+  log(`querying Wikidata for ${todo.length} artists (${artists.length - todo.length} cached)`);
   const BATCH = 60;
-  let matched = 0;
-  for (let i = 0; i < artists.length; i += BATCH) {
-    const ids = artists.slice(i, i + BATCH).map((a) => a.id);
-    const rows = await sparql(wikidataQuery(ids));
+  for (let i = 0; i < todo.length; i += BATCH) {
+    const batch = todo.slice(i, i + BATCH);
+    const rows = await sparql(wikidataQuery(batch.map((a) => a.id)));
+    for (const a of batch) wdCache[a.id] = null;
     for (const row of rows) {
-      const a = byId.get(row.spotify.value);
-      if (!a || a.wikidata) continue; // keep the first match if several items share the ID
-      Object.assign(a, interpret(row));
+      const id = row.spotify.value;
+      if (!byId.has(id) || wdCache[id]) continue; // keep the first match if several items share the ID
+      wdCache[id] = interpret(row);
+    }
+    writeFileSync(wdCacheFile, JSON.stringify(wdCache));
+    if ((i / BATCH) % 10 === 0) log(`  ${Math.min(i + BATCH, todo.length)}/${todo.length}`);
+    await sleep(500);
+  }
+  let matched = 0;
+  for (const a of artists) {
+    if (wdCache[a.id]) {
+      Object.assign(a, wdCache[a.id]);
       matched++;
     }
-    if ((i / BATCH) % 10 === 0) log(`  ${Math.min(i + BATCH, artists.length)}/${artists.length} (${matched} matched)`);
-    await sleep(500);
   }
   log(`${matched} artists matched on Wikidata`);
 
   const complete = (a) => a.type && a.gender && a.countries?.length && a.genres?.length;
-  const answerCandidates = artists.slice(0, ANSWER_COUNT).filter(complete);
-  log(`${answerCandidates.length} of the top ${ANSWER_COUNT} have complete hints`);
+  const famous = (a) => (a.sitelinks || 0) >= MIN_SITELINKS;
+  const answerCandidates = artists.slice(0, ANSWER_COUNT).filter((a) => complete(a) && famous(a));
+  log(
+    `${answerCandidates.length} of the top ${ANSWER_COUNT} have complete hints and >= ${MIN_SITELINKS} Wikipedia editions ` +
+      `(${artists.slice(0, ANSWER_COUNT).filter(complete).length} complete, ${artists.slice(0, ANSWER_COUNT).filter(famous).length} famous)`,
+  );
 
   if (!SKIP_SONGS) {
     log(`fetching songs for ${answerCandidates.length} artists (concurrency ${CONCURRENCY})`);
@@ -321,12 +345,13 @@ async function main() {
     streams: a.streams,
     daily: a.daily,
     wikidata: a.wikidata,
+    sitelinks: a.sitelinks || undefined,
     type: a.type || undefined,
     gender: a.gender || undefined,
     countries: a.countries?.length ? a.countries : undefined,
     genres: a.genres?.length ? a.genres : undefined,
     songs: a.songs?.length ? a.songs : undefined,
-    answer: complete(a) && artists.indexOf(a) < ANSWER_COUNT && (SKIP_SONGS || (a.songs?.length ?? 0) >= 3) ? true : undefined,
+    answer: complete(a) && famous(a) && artists.indexOf(a) < ANSWER_COUNT && (SKIP_SONGS || (a.songs?.length ?? 0) >= 3) ? true : undefined,
   }));
   const answers = out.filter((a) => a.answer).length;
   mkdirSync(path.dirname(OUT), { recursive: true });
