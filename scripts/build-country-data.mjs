@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build data/countries.json for Countryprox.
+ * Build data/countries.json for Geoprox.
  *
  * Sources
  *   - Wikidata (CC0): the set of sovereign states with an ISO 3166-1 alpha-2 code,

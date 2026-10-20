@@ -363,7 +363,7 @@ test('artist search handles symbols and ranks by streams', () => {
   assert.equal(E.searchItems(idx, 'ab')[0].id, 'a', 'ABBA outranks AB6IX on streams');
 });
 
-// ---------- Countryprox ----------
+// ---------- Geoprox ----------
 
 const country = (order, name, extra = {}) => ({
   id: name.slice(0, 2).toUpperCase(),

@@ -171,7 +171,7 @@ export function start(cfg) {
   function renderTrack(g) {
     const pos = (v) => `${E.trackPosition(cfg, v, app.items) * 100}%`;
     const w = E.valueWindow(cfg, g);
-    // A scale may run the other way on the track (Countryprox: A is "high" but drawn on the left).
+    // A scale may run the other way on the track (Geoprox: A is "high" but drawn on the left).
     const [a, b] = 'pinned' in w ? [w.pinned, w.pinned] : [w.low, w.high];
     const [leftV, rightV] = E.trackPosition(cfg, a, app.items) <= E.trackPosition(cfg, b, app.items) ? [a, b] : [b, a];
     const lowP = pos(leftV);

@@ -2,7 +2,7 @@
 export const GAMES = [
   { id: 'movies', title: 'Movieprox', icon: '🎬', path: '' },
   { id: 'music', title: 'Musicprox', icon: '🎧', path: 'music/' },
-  { id: 'countries', title: 'Countryprox', icon: '🌍', path: 'countries/' },
+  { id: 'countries', title: 'Geoprox', icon: '🌍', path: 'countries/' },
 ];
 
 export const SITE_ROOT = new URL('../../', import.meta.url);

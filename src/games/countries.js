@@ -1,4 +1,4 @@
-/** Countryprox: guess the country by where its name falls in the alphabet. */
+/** Geoprox: guess the country by where its name falls in the alphabet. */
 
 /** 41291 -> "41K", 17075400 -> "17.1M", 0.49 -> "0.5", 882 -> "882". */
 export function formatQuantity(n) {
@@ -14,8 +14,8 @@ const letterOf = (c) => c.name.normalize('NFD').replace(/[̀-ͯ]/g, '')[0].toUpp
 
 export default {
   id: 'countries',
-  storageKey: 'countryprox',
-  title: 'Countryprox',
+  storageKey: 'geoprox',
+  title: 'Geoprox',
   icon: '🌍',
   tagline: 'Guess the country by its place in the alphabet',
   noun: 'country',
