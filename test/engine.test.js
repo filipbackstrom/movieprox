@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as E from '../src/engine.js';
 import movies from '../src/games/movies.js';
 import music, { formatStreams } from '../src/games/music.js';
+import countries, { formatQuantity } from '../src/games/countries.js';
 
 const { MAX_GUESSES, OUTCOME, applyGuess, createGame } = E;
 
@@ -360,4 +361,79 @@ test('artist search handles symbols and ranks by streams', () => {
   const idx = E.buildSearchIndex(music, [...artists, artist('kd', 'Ke$ha', 5.0), artist('ab2', 'AB6IX', 0.5)]);
   assert.equal(E.searchItems(idx, 'kesha')[0].id, 'kd');
   assert.equal(E.searchItems(idx, 'ab')[0].id, 'a', 'ABBA outranks AB6IX on streams');
+});
+
+// ---------- Countryprox ----------
+
+const country = (order, name, extra = {}) => ({
+  id: name.slice(0, 2).toUpperCase(),
+  name,
+  flag: '🏳️',
+  order,
+  population: 10_000_000,
+  area: 100_000,
+  continents: ['Europe'],
+  landlocked: false,
+  neighbours: ['Somewhere'],
+  answer: true,
+  ...extra,
+});
+const world = ['Albania', 'Brazil', 'Chile', 'Denmark', 'Egypt', 'France', 'Germany', 'Hungary', 'India', 'Japan', 'Kenya', 'Laos', 'Mexico', 'Norway', 'Oman', 'Peru', 'Qatar', 'Russia', 'Sweden', 'Turkey', 'Uganda', 'Vietnam', 'Yemen', 'Zambia'].map(
+  (n, i) => country(i, n),
+);
+
+test('quantity formatting for area and population', () => {
+  assert.equal(formatQuantity(41291), '41K');
+  assert.equal(formatQuantity(17075400), '17.1M');
+  assert.equal(formatQuantity(1406585000), '1.4B');
+  assert.equal(formatQuantity(999_499), '999K');
+  assert.equal(formatQuantity(882), '882');
+  assert.equal(formatQuantity(0.49), '0.5');
+  assert.equal(formatQuantity(null), 'Unknown');
+});
+
+test('countries are ordered alphabetically and the flag stands in for the value', () => {
+  const sweden = world.find((c) => c.name === 'Sweden');
+  const s = createGame({ target: sweden, bounds: { high: world.at(-1), low: world[0] } });
+  const r = applyGuess(countries, s, world.find((c) => c.name === 'Norway'));
+  assert.equal(r.outcome, OUTCOME.LOW, 'Norway comes before Sweden');
+  const r2 = applyGuess(countries, r.state, world.find((c) => c.name === 'Turkey'));
+  assert.equal(r2.outcome, OUTCOME.HIGH, 'Turkey comes after Sweden');
+  assert.equal(E.candidatesInWindow(countries, world, r2.state), 5, 'Oman, Peru, Qatar, Russia, Sweden');
+  assert.equal(E.formatValue(countries, sweden.order, sweden), '🏳️');
+  assert.equal(E.trackPosition(countries, world.at(-1).order, world), 1);
+  assert.equal(E.trackPosition(countries, 0, world), 0);
+  const ticks = E.trackTicks(countries, world);
+  assert.equal(ticks[0].label, 'A');
+  assert.equal(ticks.at(-1).label, 'Z');
+});
+
+test('country hints', () => {
+  const h = E.hints(countries);
+  assert.deepEqual(
+    h.map((x) => x.label),
+    ['Landlocked', 'Area', 'Population', 'Continent', 'Neighboring countries'],
+  );
+  const ch = country(0, 'Switzerland', { landlocked: true, area: 41291, population: 9104063, neighbours: ['Austria', 'France'] });
+  assert.equal(E.hintText(h[0], ch).text, 'Yes');
+  assert.equal(E.hintText(h[1], ch).text, '41K km²');
+  assert.equal(E.hintText(h[2], ch).text, '9.1M');
+  assert.equal(E.hintText(h[3], ch).text, 'Europe');
+  assert.equal(E.hintText(h[4], ch).text, 'Austria, France');
+  const jp = country(1, 'Japan', { continents: ['Asia'], neighbours: [] });
+  assert.equal(E.hintText(h[0], jp).text, 'No');
+  assert.equal(E.hintText(h[4], jp).text, 'None, it has no land borders');
+  assert.equal(E.hintText(h[3], country(2, 'Russia', { continents: ['Europe', 'Asia'] })).text, 'Europe / Asia');
+});
+
+test('country search finds aliases and ISO codes', () => {
+  const idx = E.buildSearchIndex(countries, [
+    country(0, 'United States', { id: 'US', aliases: ['USA', 'America'], population: 340e6 }),
+    country(1, 'United Kingdom', { id: 'GB', aliases: ['UK', 'Britain'], population: 69e6 }),
+    country(2, 'Czechia', { id: 'CZ', aliases: ['Czech Republic'] }),
+  ]);
+  assert.equal(E.searchItems(idx, 'usa')[0].id, 'US');
+  assert.equal(E.searchItems(idx, 'britain')[0].id, 'GB');
+  assert.equal(E.searchItems(idx, 'czech rep')[0].id, 'CZ');
+  assert.equal(E.searchItems(idx, 'united')[0].id, 'US', 'ties on prefix go to the larger population');
 });

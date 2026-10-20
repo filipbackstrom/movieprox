@@ -1,19 +1,20 @@
-# Movieprox & Musicprox
+# Movieprox, Musicprox & Countryprox
 
 Daily guessing games in the spirit of [Betweenle](https://betweenle.com/), built on one shared engine.
 
 - **Movieprox** (`/`): guess the secret movie by its **IMDb rating**.
 - **Musicprox** (`/music/`): guess the secret artist by their **total Spotify streams**.
+- **Countryprox** (`/countries/`): guess the secret country by its **name's place in the alphabet**, Betweenle's own mechanic.
 
 You are shown two items: one above the secret, one below. Every guess reveals its value. If it is closer to the secret than one of the bounds, it replaces that bound and the range shrinks. Guess something with the exact same value and the value is pinned; from there it is about figuring out *which* one it is. You have 15 guesses, and hints unlock along the way:
 
-| After guess | Movieprox        | Musicprox       |
-| ----------- | ---------------- | --------------- |
-| 2           | Genre            | Genre           |
-| 5           | Release year     | Solo or group   |
-| 8           | Director         | Gender          |
-| 11          | Featured actors  | Nationality     |
-| 14          | Plot keywords    | Famous songs    |
+| After guess | Movieprox        | Musicprox       | Countryprox           |
+| ----------- | ---------------- | --------------- | --------------------- |
+| 2           | Genre            | Genre           | Landlocked            |
+| 5           | Release year     | Solo or group   | Area                  |
+| 8           | Director         | Gender          | Population            |
+| 11          | Featured actors  | Nationality     | Continent             |
+| 14          | Plot keywords    | Famous songs    | Neighboring countries |
 
 (The plot keyword hint needs the optional TMDB step below. Without it the final movie hint is the title pattern, e.g. `I L___ Y__, M__`.)
 
@@ -76,9 +77,19 @@ node scripts/build-music-data.mjs --max-age-hours 0     # force fresh downloads
 
 Stream totals are a snapshot. Order between artists moves slowly, so refreshing monthly is plenty.
 
+### Countries: `data/countries.json`
+
+The country list, population, area and continents come from Wikidata (sovereign states with an ISO 3166-1 code: the UN members plus Vatican City, Palestine, Kosovo and Taiwan). Short names and land neighbours come from GeoNames' country table. Landlocked status is a fixed list of the 45 landlocked states. Runs in a few seconds:
+
+```sh
+npm run build:countries
+```
+
+Every country can be the daily answer, so the sequence repeats after 196 days.
+
 ### Data license
 
-IMDb's datasets are for personal and non-commercial use only; see https://developer.imdb.com/non-commercial-datasets/. kworb.net is an unofficial source with no stated license; keep the game non-commercial and scrape gently. Wikidata is CC0.
+IMDb's datasets are for personal and non-commercial use only; see https://developer.imdb.com/non-commercial-datasets/. kworb.net is an unofficial source with no stated license; keep the game non-commercial and scrape gently. Wikidata is CC0. GeoNames is CC BY 4.0, so keep the attribution in the Countryprox help text.
 
 ## Deploying
 
@@ -95,19 +106,23 @@ Everything game-specific lives in one config file. Copy `src/games/music.js`, po
 ```
 index.html                     Movieprox page
 music/index.html               Musicprox page
+countries/index.html           Countryprox page
 src/engine.js                  shared game engine (rules, hints, daily seed, search, stats)
 src/app.js                     browser UI, takes a game config
 src/games/movies.js            Movieprox config
 src/games/music.js             Musicprox config
+src/games/countries.js         Countryprox config
 src/games/index.js             list of games for the switcher
 src/style.css
 test/engine.test.js            node:test unit tests
 scripts/build-data.mjs         IMDb datasets -> data/movies.json
 scripts/build-music-data.mjs   kworb + Wikidata -> data/artists.json
+scripts/build-country-data.mjs Wikidata + GeoNames -> data/countries.json
 scripts/enrich-tmdb.mjs        optional TMDB keyword enrichment for movies
 scripts/serve.mjs              tiny dev server
 data/movies.json               generated movie data
 data/artists.json              generated artist data
+data/countries.json            generated country data
 ```
 
 ## Design notes
@@ -115,6 +130,6 @@ data/artists.json              generated artist data
 - **Ties.** IMDb ratings have one decimal, so hundreds of movies share a rating. A guess that matches the secret's rating exactly "pins" the rating instead of moving a bound. Stream counts almost never tie, so in Musicprox the range just keeps shrinking.
 - **Wasted guesses.** A guess outside the current range still reveals its value but moves nothing, as in Betweenle.
 - **Candidate count.** The number under the bounds is how many answer-pool items sit inside the current range. It is the equivalent of Betweenle's distance meter, and matters more in Musicprox where the raw numbers mean little to most players.
-- **Scale.** Movie ratings are shown on a linear 0–10 track. Streams span two orders of magnitude, so the Musicprox track is logarithmic.
+- **Scale.** Movie ratings are shown on a linear 0–10 track. Streams span two orders of magnitude, so the Musicprox track is logarithmic. Countryprox's scale is the alphabet: each country's value is its position in the sorted list, and the value slot shows the flag instead of a number.
 - **Starting bounds.** Movies: at least a full rating point away from the secret, preferring films with many votes. Artists: at least twice, or at most half, the secret's streams, preferring artists with the widest Wikipedia coverage.
 - **Daily selection.** The answer pool is shuffled once with a fixed seed and the day number indexes into it, so the daily answer is the same for everyone and does not repeat until the pool is exhausted.

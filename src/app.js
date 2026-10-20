@@ -23,8 +23,9 @@ export function start(cfg) {
   const PREFIX = `${cfg.storageKey}:v1:`;
   const KEY_STATS = PREFIX + 'stats';
   const keyDaily = (no) => `${PREFIX}daily:${no}`;
-  const fmt = (v) => E.formatValue(cfg, v);
+  const fmt = (v, item) => E.formatValue(cfg, v, item);
   const val = (item) => E.valueOf(cfg, item);
+  const fmtItem = (item) => fmt(val(item), item);
 
   // ---------- storage ----------
 
@@ -153,7 +154,7 @@ export function start(cfg) {
       kind === 'high'
         ? `Upper bound · the secret ${cfg.noun} has ${cfg.metric.lessText}`
         : `Lower bound · the secret ${cfg.noun} has ${cfg.metric.moreText}`;
-    return `<div class="bound ${kind}"><div class="rating">${fmt(val(item))}</div><div><div class="title">${nameWithSub(item)}</div><div class="sub">${esc(sub)}</div></div></div>`;
+    return `<div class="bound ${kind}"><div class="rating">${fmtItem(item)}</div><div><div class="title">${nameWithSub(item)}</div><div class="sub">${esc(sub)}</div></div></div>`;
   }
 
   function renderBounds(g) {
@@ -168,15 +169,17 @@ export function start(cfg) {
   }
 
   function renderTrack(g) {
-    const pos = (v) => `${Math.min(1, Math.max(0, cfg.metric.scale.position(v))) * 100}%`;
+    const pos = (v) => `${E.trackPosition(cfg, v, app.items) * 100}%`;
     const w = E.valueWindow(cfg, g);
     const lowP = 'pinned' in w ? pos(w.pinned) : pos(w.low);
     const highP = 'pinned' in w ? `calc(${pos(w.pinned)} + 2px)` : pos(w.high);
     const marks = g.guesses
-      .map((x) => `<span class="mark ${x.outcome}" style="left:${pos(val(x.item))}" title="${esc(cfg.name(x.item))} ${fmt(val(x.item))}"></span>`)
+      .map((x) => `<span class="mark ${x.outcome}" style="left:${pos(val(x.item))}" title="${esc(cfg.name(x.item))} ${fmtItem(x.item)}"></span>`)
       .join('');
     const target = g.status !== 'playing' ? `<span class="mark target" style="left:${pos(val(g.target))}" title="${esc(cfg.name(g.target))}"></span>` : '';
-    const ticks = cfg.metric.scale.ticks.map((t) => `<span class="tick" style="left:${pos(t.value)}">${esc(t.label)}</span>`).join('');
+    const ticks = E.trackTicks(cfg, app.items)
+      .map((t) => `<span class="tick" style="left:${pos(t.value)}">${esc(t.label)}</span>`)
+      .join('');
     return `<div class="track" aria-hidden="true"><div class="rail"></div><div class="window" style="left:${lowP};width:calc(${highP} - ${lowP})"></div>${marks}${target}${ticks}</div>`;
   }
 
@@ -228,7 +231,7 @@ export function start(cfg) {
         (x) => `<li class="${x.outcome}">
           <span class="n">${x.n}</span>
           <span><div class="t">${E.OUTCOME_EMOJI[x.outcome]} ${nameWithSub(x.item)}</div><div class="o">${outcomeText[x.outcome]}</div></span>
-          <span class="r">${fmt(val(x.item))}</span>
+          <span class="r">${fmtItem(x.item)}</span>
         </li>`,
       )
       .join('');
@@ -242,7 +245,7 @@ export function start(cfg) {
     return `<section class="panel result">
       <h2>${won ? `🎉 Got it in ${g.guesses.length}!` : '😵 Out of guesses'}</h2>
       <div class="answer">
-        <div class="rating">${fmt(val(t))}</div>
+        <div class="rating">${fmtItem(t)}</div>
         <div><div class="title">${esc(cfg.name(t))}</div><div class="details">${esc(cfg.details(t))}</div></div>
       </div>
       <pre id="share-text">${esc(share)}</pre>

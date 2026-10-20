@@ -90,7 +90,14 @@ export function puzzleNumber(cfg, dateStr) {
 export const valueOf = (cfg, item) => cfg.metric.value(item);
 export const quantize = (cfg, v) => cfg.metric.quantize(v);
 export const sameValue = (cfg, a, b) => quantize(cfg, a) === quantize(cfg, b);
-export const formatValue = (cfg, v) => cfg.metric.format(v);
+/** Format a value for display. The item is passed when known, for games whose display is not the number itself. */
+export const formatValue = (cfg, v, item) => cfg.metric.format(v, item);
+
+/** Track position in [0, 1]. `items` is passed for games whose scale depends on the data. */
+export const trackPosition = (cfg, v, items) => Math.min(1, Math.max(0, cfg.metric.scale.position(v, items)));
+
+/** Track ticks: [{ value, label }], static or derived from the data. */
+export const trackTicks = (cfg, items) => (typeof cfg.metric.scale.ticks === 'function' ? cfg.metric.scale.ticks(items) : cfg.metric.scale.ticks);
 
 // ---------- setup ----------
 
