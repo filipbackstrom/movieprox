@@ -97,6 +97,34 @@ button {
   border-color: var(--accent);
   color: var(--accent);
 }
+.switcher {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px 8px;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.game-link {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.game-link:hover {
+  color: var(--text);
+}
+.game-link.active {
+  color: var(--accent);
+  border-color: var(--border);
+  background: var(--panel);
+}
+.result .next a {
+  color: var(--accent);
+}
 
 /* ---------- layout ---------- */
 .app {

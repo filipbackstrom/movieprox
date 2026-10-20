@@ -13,16 +13,17 @@
     <header class="top">
       <div class="top-inner">
         <button class="icon-btn" id="btn-help" aria-label="How to play" title="How to play">?</button>
-        <h1 class="brand"><span class="brand-icon" aria-hidden="true">🎬</span> Movieprox</h1>
+        <h1 class="brand" id="brand">Movieprox</h1>
         <div class="top-actions">
           <button class="icon-btn" id="btn-mode" aria-label="Switch between daily and random puzzle" title="Random puzzle">🎲</button>
           <button class="icon-btn" id="btn-stats" aria-label="Statistics" title="Statistics">📊</button>
         </div>
       </div>
+      <nav class="switcher" id="switcher" aria-label="Games"></nav>
     </header>
 
     <main class="app" id="app">
-      <section class="panel loading" id="loading">Loading movies…</section>
+      <section class="panel loading" id="loading">Loading…</section>
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -33,31 +34,7 @@
           <h2>How to play</h2>
           <button class="icon-btn" value="close" aria-label="Close">✕</button>
         </header>
-        <p>Find the secret movie. You know it is rated <strong>somewhere between</strong> two movies on IMDb.</p>
-        <ol class="rules">
-          <li>Guess any movie. Its IMDb rating is revealed.</li>
-          <li>If the guess is rated <strong>closer to the secret</strong> than one of the two bounds, it replaces that bound and the range shrinks.</li>
-          <li>If it has the <strong>exact same rating</strong> as the secret movie, the rating gets pinned. Now it is all about which movie it is.</li>
-          <li>A guess outside the current range teaches you nothing. Try to avoid those.</li>
-          <li>You have <strong>15 guesses</strong>. Hints unlock along the way:</li>
-        </ol>
-        <table class="hint-table">
-          <tbody>
-            <tr><td>After 2 guesses</td><td>Genre</td></tr>
-            <tr><td>After 5 guesses</td><td>Release year</td></tr>
-            <tr><td>After 8 guesses</td><td>Director</td></tr>
-            <tr><td>After 11 guesses</td><td>Featured actors</td></tr>
-            <tr><td>After 14 guesses</td><td>Plot keywords</td></tr>
-          </tbody>
-        </table>
-        <p class="legend">
-          <span>🔼 new upper bound</span>
-          <span>🔽 new lower bound</span>
-          <span>🟰 same rating</span>
-          <span>⬜ outside the range</span>
-          <span>🎯 correct</span>
-        </p>
-        <p class="muted small">A new secret movie every day. Ratings come from IMDb's public datasets and may lag the live site slightly.</p>
+        <div id="help-body"></div>
       </form>
     </dialog>
 
@@ -71,6 +48,10 @@
       </form>
     </dialog>
 
-    <script type="module" src="src/app.js"></script>
+    <script type="module">
+      import { start } from './src/app.js';
+      import config from './src/games/movies.js';
+      start(config);
+    </script>
   </body>
 </html>
