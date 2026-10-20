@@ -59,7 +59,7 @@ IMDb's datasets are for personal and non-commercial use only. See https://develo
 
 ## Deploying
 
-Any static host works. The workflow in `.github/workflows/pages.yml` runs the tests and deploys the repository root to GitHub Pages on every push to the deploy branch. If the repository's Pages setting is not yet "GitHub Actions", the first run turns it on. Re-run `npm run build:data` now and then and commit the result so ratings stay current.
+Any static host works. The workflow in `.github/workflows/pages.yml` runs the tests and deploys the repository root to GitHub Pages on every push to `main`. If the repository's Pages setting is not yet "GitHub Actions", the first run turns it on. Re-run `npm run build:data` now and then and commit the result so ratings stay current.
 
 Note that a GitHub Pages site is public on the internet even when the repository is private. The URL is just unlisted.
 
