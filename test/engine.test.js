@@ -394,15 +394,19 @@ test('quantity formatting for area and population', () => {
 
 test('countries are ordered alphabetically and the flag stands in for the value', () => {
   const sweden = world.find((c) => c.name === 'Sweden');
-  const s = createGame({ target: sweden, bounds: { high: world.at(-1), low: world[0] } });
+  // A is the upper bound, Z the lower, as in Betweenle.
+  const s = createGame({ target: sweden, bounds: { high: world[0], low: world.at(-1) } });
   const r = applyGuess(countries, s, world.find((c) => c.name === 'Norway'));
-  assert.equal(r.outcome, OUTCOME.LOW, 'Norway comes before Sweden');
+  assert.equal(r.outcome, OUTCOME.HIGH, 'Norway comes before Sweden, so it becomes the upper bound');
   const r2 = applyGuess(countries, r.state, world.find((c) => c.name === 'Turkey'));
-  assert.equal(r2.outcome, OUTCOME.HIGH, 'Turkey comes after Sweden');
+  assert.equal(r2.outcome, OUTCOME.LOW, 'Turkey comes after Sweden, so it becomes the lower bound');
   assert.equal(E.candidatesInWindow(countries, world, r2.state), 5, 'Oman, Peru, Qatar, Russia, Sweden');
-  assert.equal(E.formatValue(countries, sweden.order, sweden), '🏳️');
-  assert.equal(E.trackPosition(countries, world.at(-1).order, world), 1);
-  assert.equal(E.trackPosition(countries, 0, world), 0);
+  assert.equal(E.formatValue(countries, -sweden.order, sweden), '🏳️');
+  assert.equal(E.trackPosition(countries, -world.at(-1).order, world), 1, 'Z on the right');
+  assert.equal(E.trackPosition(countries, 0, world), 0, 'A on the left');
+  const edge = createGame({ target: sweden, bounds: { high: null, low: null } });
+  assert.deepEqual(E.valueWindow(countries, edge), { low: -Infinity, high: 1 });
+  assert.equal(E.candidatesInWindow(countries, world, edge), world.length);
   const ticks = E.trackTicks(countries, world);
   assert.equal(ticks[0].label, 'A');
   assert.equal(ticks.at(-1).label, 'Z');

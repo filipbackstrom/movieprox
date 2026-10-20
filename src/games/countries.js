@@ -28,16 +28,21 @@ export default {
   metric: {
     label: 'alphabetical position',
     shortLabel: 'name',
-    value: (c) => c.order,
+    /**
+     * The value is the negated position in the alphabetical list, so that A is the
+     * "high" end: the earlier name sits in the upper bound card, as in Betweenle.
+     */
+    value: (c) => -c.order,
     quantize: (v) => Math.round(v),
     /** The big value slot shows the flag; the name itself carries the information. */
     format: (v, item) => (item ? item.flag : ''),
-    moreText: 'a name later in the alphabet',
-    lessText: 'a name earlier in the alphabet',
+    moreText: 'a name earlier in the alphabet',
+    lessText: 'a name later in the alphabet',
     scale: {
-      min: -1,
-      max: Infinity,
-      position: (v, items) => (items && items.length > 1 ? v / (items.length - 1) : 0),
+      min: -Infinity,
+      max: 1,
+      /** The track still reads A to Z from left to right. */
+      position: (v, items) => (items && items.length > 1 ? -v / (items.length - 1) : 0),
       ticks: (items) => {
         if (!items?.length) return [];
         const sorted = items.slice().sort((a, b) => a.order - b.order);
@@ -45,12 +50,12 @@ export default {
         for (let k = 0; k <= 8; k++) {
           const c = sorted[Math.round((k / 8) * (sorted.length - 1))];
           const label = letterOf(c);
-          if (!out.length || out[out.length - 1].label !== label) out.push({ value: c.order, label });
+          if (!out.length || out[out.length - 1].label !== label) out.push({ value: -c.order, label });
         }
         return out;
       },
-      edgeHigh: { value: 'Z', label: 'End of the alphabet', sub: 'No country comes later' },
-      edgeLow: { value: 'A', label: 'Start of the alphabet', sub: 'No country comes earlier' },
+      edgeHigh: { value: 'A', label: 'Start of the alphabet', sub: 'No country comes earlier' },
+      edgeLow: { value: 'Z', label: 'End of the alphabet', sub: 'No country comes later' },
     },
   },
 

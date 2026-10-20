@@ -171,8 +171,11 @@ export function start(cfg) {
   function renderTrack(g) {
     const pos = (v) => `${E.trackPosition(cfg, v, app.items) * 100}%`;
     const w = E.valueWindow(cfg, g);
-    const lowP = 'pinned' in w ? pos(w.pinned) : pos(w.low);
-    const highP = 'pinned' in w ? `calc(${pos(w.pinned)} + 2px)` : pos(w.high);
+    // A scale may run the other way on the track (Countryprox: A is "high" but drawn on the left).
+    const [a, b] = 'pinned' in w ? [w.pinned, w.pinned] : [w.low, w.high];
+    const [leftV, rightV] = E.trackPosition(cfg, a, app.items) <= E.trackPosition(cfg, b, app.items) ? [a, b] : [b, a];
+    const lowP = pos(leftV);
+    const highP = 'pinned' in w ? `calc(${pos(rightV)} + 2px)` : pos(rightV);
     const marks = g.guesses
       .map((x) => `<span class="mark ${x.outcome}" style="left:${pos(val(x.item))}" title="${esc(cfg.name(x.item))} ${fmtItem(x.item)}"></span>`)
       .join('');
