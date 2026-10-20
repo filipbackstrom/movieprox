@@ -1,7 +1,7 @@
 import * as G from './game.js';
 
 const DATA_URL = 'data/movies.json';
-const STORAGE_PREFIX = 'ratingle:v1:';
+const STORAGE_PREFIX = 'movieprox:v1:';
 const KEY_STATS = STORAGE_PREFIX + 'stats';
 const keyDaily = (no) => `${STORAGE_PREFIX}daily:${no}`;
 

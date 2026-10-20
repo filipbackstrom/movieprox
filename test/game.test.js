@@ -225,10 +225,10 @@ test('share text', () => {
   s = applyGuess(s, stepBrothers).state;
   s = applyGuess(s, movie('p', 'P', 7.0)).state;
   s = applyGuess(s, iLoveYouMan).state;
-  assert.equal(shareText(s, { title: 'Ratingle', url: 'https://example.com' }), 'Ratingle #1 5/15\n🔼⬜🔽🟰🎯\nhttps://example.com');
+  assert.equal(shareText(s, { title: 'Movieprox', url: 'https://example.com' }), 'Movieprox #1 5/15\n🔼⬜🔽🟰🎯\nhttps://example.com');
   let lost = game();
   for (let i = 0; i < MAX_GUESSES; i++) lost = applyGuess(lost, movie(`x${i}`, `X${i}`, 8.0 + i / 100)).state;
-  assert.ok(shareText(lost).startsWith('Ratingle #1 X/15\n🔼⬜⬜⬜⬜\n'));
+  assert.ok(shareText(lost).startsWith('Movieprox #1 X/15\n🔼⬜⬜⬜⬜\n'));
 });
 
 test('search ranks exact, prefix, then substring, then by votes', () => {

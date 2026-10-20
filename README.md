@@ -1,4 +1,4 @@
-# Ratingle
+# Movieprox
 
 A daily movie guessing game in the spirit of [Betweenle](https://betweenle.com/), but for IMDb ratings.
 

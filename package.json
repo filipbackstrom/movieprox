@@ -1,5 +1,5 @@
 {
-  "name": "ratingle",
+  "name": "movieprox",
   "version": "0.1.0",
   "private": true,
   "description": "A daily movie guessing game: narrow down the secret movie by IMDb rating, Betweenle-style.",

@@ -12,7 +12,7 @@
  * - 15 guesses. Hints unlock after 2, 5, 8, 11 and 14 guesses.
  */
 
-export const GAME_TITLE = 'Ratingle';
+export const GAME_TITLE = 'Movieprox';
 export const MAX_GUESSES = 15;
 export const LAUNCH_DATE = '2026-10-20';
 export const SHUFFLE_SEED = 0x5eed1e;
